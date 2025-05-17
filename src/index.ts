@@ -1,6 +1,8 @@
 import express from 'express';
 import * as dotenv from 'dotenv';
 import path from 'path';
+import authRoutes from "./routes/auth.routes";
+import cors from 'cors';
 
 // Load correct .env file based on NODE_ENV
 dotenv.config({
@@ -11,12 +13,11 @@ dotenv.config({
 });
 
 const app = express();
-
+app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (_req, res) => {
-    res.send(`Hello from ${process.env.NODE_ENV} mode!`);
-});
+app.use(cors());
+app.use('/api/auth', authRoutes);
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT} in ${process.env.NODE_ENV} mode`);
