@@ -1,6 +1,10 @@
 import {loginSchema, registerSchema} from '../validators/auth.validator';
 import {loginUserService, registerUserService} from '../services/auth.service';
 import { RequestHandler } from 'express';
+import {sendError, sendSuccess} from '../utils/response';
+import {STATUS_MESSAGE_BY_CODE, STATUS_MESSAGES} from "../utils/statusMessages";
+import {STATUS_CODES} from "../utils/statusCodes";
+import {AppError} from "../utils/appError";
 
 interface RegisterRequestBody {
     name?: string;
@@ -16,7 +20,7 @@ export interface LoginRequestBody {
 export const registerUser: RequestHandler<{}, any, RegisterRequestBody> = async (req, res) => {
     const { error, value } = registerSchema.validate(req.body);
     if (error) {
-        res.status(400).json({ message: error.details[0].message });
+        sendError(res, STATUS_CODES.BAD_REQUEST, 'Validation failed', STATUS_MESSAGES.BAD_REQUEST);
         return;
     }
 
@@ -32,16 +36,24 @@ export const registerUser: RequestHandler<{}, any, RegisterRequestBody> = async 
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        res.status(201).json({ user, accessToken }); // ✅ Just call it, don't return
+        sendSuccess(
+            res,
+            STATUS_CODES.CREATED,
+            STATUS_MESSAGES.CREATED,
+            { user, accessToken }
+        );
     } catch (err: any) {
-        res.status(409).json({ message: err.message });
+        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        const message = err.message || 'Something went wrong';
+        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
+        sendError(res, status, message, errorText);
     }
 };
 
 export const loginUser: RequestHandler<{}, any, LoginRequestBody> = async (req, res) => {
     const { error, value } = loginSchema.validate(req.body);
     if (error) {
-        res.status(400).json({ message: error.details[0].message });
+        sendError(res, STATUS_CODES.BAD_REQUEST, 'Validation failed', STATUS_MESSAGES.BAD_REQUEST);
         return;
     }
 
@@ -57,8 +69,16 @@ export const loginUser: RequestHandler<{}, any, LoginRequestBody> = async (req, 
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        res.status(200).json({ user, accessToken, refreshToken });
+        sendSuccess(
+            res,
+            STATUS_CODES.OK,
+            STATUS_MESSAGES.OK,
+            { user, accessToken, refreshToken }
+        );
     } catch (err: any) {
-        res.status(401).json({ message: err.message });
+        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        const message = err.message || 'Something went wrong';
+        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
+        sendError(res, status, message, errorText);
     }
 };
