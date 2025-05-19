@@ -43,8 +43,23 @@ export const loginUserService = async (email: string, password: string) => {
         throw new AppError(APP_MESSAGES.INVALID_EMAIL_PASSWORD, STATUS_CODES.UNAUTHORIZED);
     }
 
+    await prisma.token.updateMany({
+        where: { userId: user.id, blacklisted: false },
+        data: { blacklisted: true }
+    });
+
     const accessToken = generateAccessToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
+
+    await prisma.token.create({
+        data: {
+            token: refreshToken,
+            type: 'REFRESH',
+            userId: user.id,
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            blacklisted: false,
+        },
+    });
 
     const { password: _, ...userWithoutPassword } = user;
 
