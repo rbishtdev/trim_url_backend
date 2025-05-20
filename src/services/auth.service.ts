@@ -5,6 +5,7 @@ import {AppError} from "../utils/appError";
 import {STATUS_CODES} from "../utils/statusCodes";
 import {APP_MESSAGES} from "../utils/statusMessages";
 import jwt from "jsonwebtoken";
+import {DeviceType} from "../utils/enums";
 
 export const registerUserService = async (email: string, password: string, name?: string) => {
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -31,7 +32,7 @@ export const registerUserService = async (email: string, password: string, name?
     return { user: userWithoutPassword, accessToken, refreshToken };
 };
 
-export const loginUserService = async (email: string, password: string) => {
+export const loginUserService = async (email: string, password: string, deviceType: DeviceType) => {
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
@@ -45,8 +46,12 @@ export const loginUserService = async (email: string, password: string) => {
     }
 
     await prisma.token.updateMany({
-        where: { userId: user.id, blacklisted: false },
-        data: { blacklisted: true }
+        where: {
+            userId: user.id,
+            deviceType,
+            blacklisted: false,
+        },
+        data: { blacklisted: true },
     });
 
     const accessToken = generateAccessToken(user.id);
@@ -57,7 +62,8 @@ export const loginUserService = async (email: string, password: string) => {
             token: refreshToken,
             type: 'REFRESH',
             userId: user.id,
-            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            deviceType,
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
             blacklisted: false,
         },
     });
@@ -67,7 +73,7 @@ export const loginUserService = async (email: string, password: string) => {
     return { user: userWithoutPassword, accessToken, refreshToken };
 };
 
-export const handleRefreshTokenService = async (refreshToken: string) => {
+export const handleRefreshTokenService = async (refreshToken: string, deviceType: DeviceType) => {
         const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET!) as { userId: string };
 
         const storedToken = await prisma.token.findFirst({
@@ -89,6 +95,7 @@ export const handleRefreshTokenService = async (refreshToken: string) => {
             data: {
                 token: newRefreshToken,
                 userId: decoded.userId,
+                deviceType,
                 expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
                 blacklisted: false,
                 type: 'REFRESH',

@@ -5,6 +5,7 @@ import {sendError, sendSuccess} from '../utils/response';
 import {APP_MESSAGES, STATUS_MESSAGE_BY_CODE, STATUS_MESSAGES} from "../utils/statusMessages";
 import {STATUS_CODES} from "../utils/statusCodes";
 import {AppError} from "../utils/appError";
+import {DeviceType} from "../utils/enums";
 
 interface RegisterRequestBody {
     name?: string;
@@ -15,6 +16,7 @@ interface RegisterRequestBody {
 export interface LoginRequestBody {
     email: string;
     password: string;
+    deviceType: DeviceType;
 }
 
 export interface RefreshTokenRequestBody {
@@ -61,10 +63,10 @@ export const loginUser: RequestHandler<{}, any, LoginRequestBody> = async (req, 
         return;
     }
 
-    const { email, password } = value;
+    const { email, password, deviceType } = value;
 
     try {
-        const { user, accessToken, refreshToken } = await loginUserService(email, password);
+        const { user, accessToken, refreshToken } = await loginUserService(email, password, deviceType);
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
@@ -99,10 +101,10 @@ export const refreshAccessToken: RequestHandler<{}, any, RefreshTokenRequestBody
         );
         return;
     }
-    const {refreshToken} = value;
+    const {refreshToken, deviceType} = value;
 
     try {
-        const {newAccessToken, newRefreshToken} = await handleRefreshTokenService(refreshToken);
+        const {newAccessToken, newRefreshToken} = await handleRefreshTokenService(refreshToken, deviceType);
 
         res.cookie('refreshToken', newRefreshToken, {
             httpOnly: true,

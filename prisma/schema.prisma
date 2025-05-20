@@ -33,19 +33,25 @@ model Url {
 }
 
 model Token {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
   token       String
   type        TokenType
   expires     DateTime
-  blacklisted Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  userId      String    @db.ObjectId
-  user        User      @relation(fields: [userId], references: [id])
+  deviceType  DeviceType
+  blacklisted Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  userId      String     @db.ObjectId
+  user        User       @relation(fields: [userId], references: [id])
 }
 
 enum TokenType {
   ACCESS
   REFRESH
+}
+
+enum DeviceType {
+  MOBILE
+  WEB
 }
 
 enum UserRole {
