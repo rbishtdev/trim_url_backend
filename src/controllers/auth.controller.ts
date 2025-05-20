@@ -6,22 +6,9 @@ import {APP_MESSAGES, STATUS_MESSAGE_BY_CODE, STATUS_MESSAGES} from "../utils/st
 import {STATUS_CODES} from "../utils/statusCodes";
 import {AppError} from "../utils/appError";
 import {DeviceType} from "../utils/enums";
-
-interface RegisterRequestBody {
-    name?: string;
-    email: string;
-    password: string;
-}
-
-export interface LoginRequestBody {
-    email: string;
-    password: string;
-    deviceType: DeviceType;
-}
-
-export interface RefreshTokenRequestBody {
-    refreshToken: string;
-}
+import {RegisterRequestBody} from "../interfaces/auth/register.interface";
+import {LoginRequestBody} from "../interfaces/auth/login.interface";
+import {RefreshTokenRequestBody} from "../interfaces/auth/refresh-token.interface";
 
 export const registerUser: RequestHandler<{}, any, RegisterRequestBody> = async (req, res) => {
     const { error, value } = registerSchema.validate(req.body);
