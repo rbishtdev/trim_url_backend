@@ -26,7 +26,7 @@ export interface RefreshTokenRequestBody {
 export const registerUser: RequestHandler<{}, any, RegisterRequestBody> = async (req, res) => {
     const { error, value } = registerSchema.validate(req.body);
     if (error) {
-        sendError(res, STATUS_CODES.BAD_REQUEST, APP_MESSAGES.VALIDATION_FAILED, STATUS_MESSAGES.BAD_REQUEST);
+        sendError(res, STATUS_CODES.BAD_REQUEST, error.message, STATUS_MESSAGES.BAD_REQUEST);
         return;
     }
 
@@ -59,7 +59,7 @@ export const registerUser: RequestHandler<{}, any, RegisterRequestBody> = async 
 export const loginUser: RequestHandler<{}, any, LoginRequestBody> = async (req, res) => {
     const { error, value } = loginSchema.validate(req.body);
     if (error) {
-        sendError(res, STATUS_CODES.BAD_REQUEST, APP_MESSAGES.VALIDATION_FAILED, STATUS_MESSAGES.BAD_REQUEST);
+        sendError(res, STATUS_CODES.BAD_REQUEST, error.message, STATUS_MESSAGES.BAD_REQUEST);
         return;
     }
 
@@ -96,7 +96,7 @@ export const refreshAccessToken: RequestHandler<{}, any, RefreshTokenRequestBody
         sendError(
             res,
             STATUS_CODES.BAD_REQUEST,
-            APP_MESSAGES.VALIDATION_FAILED,
+            error.message,
             STATUS_MESSAGES.BAD_REQUEST
         );
         return;
