@@ -17,6 +17,8 @@ export const APP_MESSAGES = {
     USER_ALREADY_EXISTS: 'User already exists',
     USER_NOT_FOUND: 'User does not exist',
     INVALID_EMAIL_PASSWORD: 'Invalid email and password',
+    REFRESH_TOKEN_INVALID: 'Refresh token is invalid or blacklisted',
+    VALIDATION_FAILED: 'Validation failed',
 } as const;
 
 export const STATUS_MESSAGE_BY_CODE: Record<number, string> = {

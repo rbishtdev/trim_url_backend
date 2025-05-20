@@ -4,6 +4,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import {AppError} from "../utils/appError";
 import {STATUS_CODES} from "../utils/statusCodes";
 import {APP_MESSAGES} from "../utils/statusMessages";
+import jwt from "jsonwebtoken";
 
 export const registerUserService = async (email: string, password: string, name?: string) => {
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -66,3 +67,33 @@ export const loginUserService = async (email: string, password: string) => {
     return { user: userWithoutPassword, accessToken, refreshToken };
 };
 
+export const handleRefreshTokenService = async (refreshToken: string) => {
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET!) as { userId: string };
+
+        const storedToken = await prisma.token.findFirst({
+            where: {
+                token: refreshToken,
+                userId: decoded.userId,
+                blacklisted: false,
+            },
+        });
+
+        if (!storedToken) {
+            throw new AppError(APP_MESSAGES.REFRESH_TOKEN_INVALID, STATUS_CODES.UNAUTHORIZED);
+        }
+
+        const newAccessToken = generateAccessToken(decoded.userId);
+        const newRefreshToken = generateRefreshToken(decoded.userId);
+
+        await prisma.token.create({
+            data: {
+                token: newRefreshToken,
+                userId: decoded.userId,
+                expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+                blacklisted: false,
+                type: 'REFRESH',
+            },
+        });
+
+        return { newAccessToken, newRefreshToken };
+};
