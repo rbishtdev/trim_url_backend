@@ -19,6 +19,7 @@ export const APP_MESSAGES = {
     INVALID_EMAIL_PASSWORD: 'Invalid email and password',
     REFRESH_TOKEN_INVALID: 'Refresh token is invalid or blacklisted',
     VALIDATION_FAILED: 'Validation failed',
+    INVALID_EXPIRE_TOKEN: 'Invalid or expired token',
 } as const;
 
 export const STATUS_MESSAGE_BY_CODE: Record<number, string> = {
