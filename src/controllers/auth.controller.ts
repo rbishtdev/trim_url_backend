@@ -86,7 +86,6 @@ export const refreshAccessToken: RequestHandler<{}, any, RefreshTokenRequestBody
             error.message,
             STATUS_MESSAGES.BAD_REQUEST
         );
-        return;
     }
     const {refreshToken, deviceType} = value;
 

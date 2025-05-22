@@ -21,17 +21,18 @@ model User {
 }
 
 model Url {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  shortCode String    @unique
-  targetUrl String
-  userId    String?   @db.ObjectId
-  user      User?     @relation(fields: [userId], references: [id])
-  visits    Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  expiresAt DateTime?
-  deleted   Boolean   @default(false)
-  deletedAt DateTime?
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  shortCode      String         @unique
+  targetUrl      String
+  userId         String?        @db.ObjectId
+  user           User?          @relation(fields: [userId], references: [id])
+  visits         Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  expiresAt      DateTime?
+  expirationType ExpirationType @default(SEVEN_DAYS)
+  deleted        Boolean        @default(false)
+  deletedAt      DateTime?
 }
 
 model Token {
@@ -59,4 +60,16 @@ enum DeviceType {
 enum UserRole {
   USER
   ADMIN
+}
+
+enum ExpirationType {
+  ONE_DAY
+  TWO_DAYS
+  THREE_DAYS
+  FOUR_DAYS
+  FIVE_DAYS
+  SIX_DAYS
+  SEVEN_DAYS
+  CUSTOM
+  NONE
 }
