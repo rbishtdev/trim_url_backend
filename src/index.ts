@@ -4,6 +4,7 @@ import path from 'path';
 import authRoutes from "./routes/auth.routes";
 import cors from 'cors';
 import urlRoutes from "./routes/url.routes";
+import  './jobs/scheduler';
 
 // Load correct .env file based on NODE_ENV
 dotenv.config({

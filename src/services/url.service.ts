@@ -31,8 +31,8 @@ export const createShortUrlService = async (
         expiresAt = new Date(
             now.getFullYear(),
             now.getMonth(),
-            now.getDate() + days,
-            0, 0, 0, 0
+            now.getDate() + days + 1,
+            23, 0, 0, 0
         );
     }
 
