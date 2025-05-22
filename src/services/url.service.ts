@@ -1,5 +1,5 @@
 import prisma from '../db/db';
-import {generateShortCode} from "../helpers/shortCodeHelper";
+import {generateUniqueShortCode} from "../helpers/generateShortCodeHelper";
 
 export const createShortUrlService = async (targetUrl: string, userId: string | null) => {
     let existingUrl;
@@ -48,17 +48,4 @@ export const createShortUrlService = async (targetUrl: string, userId: string | 
         shortCode: newUrl.shortCode,
         targetUrl: newUrl.targetUrl,
     };
-};
-
-const generateUniqueShortCode = async (): Promise<string> => {
-    let code: string;
-    let exists = true;
-
-    do {
-        code = generateShortCode();
-        const found = await prisma.url.findUnique({ where: { shortCode: code } });
-        exists = !!found;
-    } while (exists);
-
-    return code;
 };
