@@ -20,3 +20,19 @@ export const redisCacheHelper = new Redis({
 });
 
 
+class RedisHelper {
+   static async get(key: string): Promise<any | null> {
+        const data = await redisCacheHelper.get(key);
+        return data ? JSON.parse(data) : null;
+    }
+
+    static async set(key: string, value: any, ttlSeconds = 3600): Promise<void> {
+        await redisCacheHelper.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+    }
+
+    static async delete(key: string): Promise<void> {
+        await redisCacheHelper.del(key);
+    }
+}
+export default RedisHelper;
+

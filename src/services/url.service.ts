@@ -3,6 +3,8 @@ import {generateUniqueShortCode} from "../helpers/generateShortCodeHelper";
 import {ExpirationType} from "../utils/enums";
 import {ShortUrlRequestBody} from "../interfaces/url/shorten-url.interface";
 import {AppError} from "../utils/appError";
+import {RedisKeys} from "../utils/cacheKeys";
+import RedisHelper from "../helpers/redisCacheHelper";
 
 export const createShortUrlService = async (
     data: ShortUrlRequestBody,
@@ -36,6 +38,15 @@ export const createShortUrlService = async (
         );
     }
 
+    const cacheKey = userId
+        ? RedisKeys.userShortUrl(userId, targetUrl)
+        : RedisKeys.guestShortUrl(targetUrl);
+
+    // Check Redis first
+    const cached = await RedisHelper.get(cacheKey);
+
+    if (cached) return cached;
+
     // Prevent duplicate URL creation for guest (unauthenticated) users with same active short code
     if (userId) {
         const existingUrl = await prisma.url.findFirst({
@@ -49,6 +60,11 @@ export const createShortUrlService = async (
         });
 
         if (existingUrl) {
+            await RedisHelper.set(cacheKey, {
+                shortCode: existingUrl.shortCode,
+                targetUrl: existingUrl.targetUrl,
+                expiresAt: existingUrl.expiresAt,
+            });
             return {
                 shortCode: existingUrl.shortCode,
                 targetUrl: existingUrl.targetUrl,
@@ -67,6 +83,11 @@ export const createShortUrlService = async (
         });
 
         if (existingUrl) {
+            await RedisHelper.set(cacheKey, {
+                shortCode: existingUrl.shortCode,
+                targetUrl: existingUrl.targetUrl,
+                expiresAt: existingUrl.expiresAt,
+            });
             return {
                 shortCode: existingUrl.shortCode,
                 targetUrl: existingUrl.targetUrl,
@@ -85,6 +106,11 @@ export const createShortUrlService = async (
             expiresAt,
             expirationType,
         },
+    });
+    await RedisHelper.set(cacheKey, {
+        shortCode: newUrl.shortCode,
+        targetUrl: newUrl.targetUrl,
+        expiresAt: newUrl.expiresAt,
     });
 
     return {
