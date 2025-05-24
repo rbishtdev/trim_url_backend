@@ -107,6 +107,7 @@ export const createShortUrlService = async (
             expirationType,
         },
     });
+
     await RedisHelper.set(cacheKey, {
         shortCode: newUrl.shortCode,
         targetUrl: newUrl.targetUrl,

@@ -21,12 +21,12 @@ export const redisCacheHelper = new Redis({
 
 
 class RedisHelper {
-   static async get(key: string): Promise<any | null> {
+    static async get(key: string): Promise<any | null> {
         const data = await redisCacheHelper.get(key);
         return data ? JSON.parse(data) : null;
     }
 
-    static async set(key: string, value: any, ttlSeconds = 3600): Promise<void> {
+    static async set(key: string, value: any, ttlSeconds = 24 * 60 * 60): Promise<void> {
         await redisCacheHelper.set(key, JSON.stringify(value), 'EX', ttlSeconds);
     }
 
