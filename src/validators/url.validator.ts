@@ -24,3 +24,11 @@ import Joi from 'joi';
             otherwise: Joi.forbidden(),
         }),
     });
+
+export const shortCodeSchema = Joi.object({
+    shortCode: Joi.string().length(6).required().messages({
+        'string.base': `"shortCode" should be a type of 'text'`,
+        'string.min': `"shortCode" should have a minimum length of {#limit}`,
+        'any.required': `"shortCode" is a required field`,
+    }),
+});

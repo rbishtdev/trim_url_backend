@@ -6,11 +6,11 @@ import cors from 'cors';
 import urlRoutes from "./routes/url.routes";
 import  './jobs/scheduler';
 
-// Load correct .env file based on NODE_ENV
+// Load correct .env.development file based on NODE_ENV
 dotenv.config({
     path: path.resolve(
         process.cwd(),
-        process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
+        process.env.NODE_ENV === 'production' ? '.env.development.production' : '.env.development.development'
     ),
 });
 

@@ -4,7 +4,7 @@ import {ExpirationType} from "../utils/enums";
 import {ShortUrlRequestBody} from "../interfaces/url/shorten-url.interface";
 import {AppError} from "../utils/appError";
 import {RedisKeys} from "../utils/cacheKeys";
-import RedisHelper from "../helpers/redisCacheHelper";
+import RedisHelper, {redisCacheHelper} from "../helpers/redisCacheHelper";
 
 export const createShortUrlService = async (
     data: ShortUrlRequestBody,
@@ -119,6 +119,31 @@ export const createShortUrlService = async (
         targetUrl: newUrl.targetUrl,
         expiresAt: newUrl.expiresAt,
     };
+};
+
+export const getShortUrlService = async (shortCode: string) => {
+    const cacheKey = RedisKeys.shortCodeData(shortCode);
+
+    const cached = await RedisHelper.get(cacheKey);
+    if (cached) return cached;
+
+    const urlData = await prisma.url.findFirst({
+        where: {
+            shortCode,
+            deleted: false,
+            expiresAt: {
+                gt: new Date(),
+            },
+        },
+    });
+
+    if (!urlData) {
+        return null;
+    }
+
+    await RedisHelper.set(cacheKey, urlData);
+
+    return urlData;
 };
 
 const EXPIRATION_DAYS_MAP: Record<ExpirationType, number | null> = {
