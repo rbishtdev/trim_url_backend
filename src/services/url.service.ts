@@ -146,6 +146,18 @@ export const getShortUrlService = async (shortCode: string) => {
     return urlData;
 };
 
+export const getUserUrlsService = async (userId: string) => {
+    return prisma.url.findMany({
+        where: {
+            userId,
+            deleted: false,
+        },
+        orderBy: {
+            createdAt: 'desc',
+        },
+    });
+};
+
 const EXPIRATION_DAYS_MAP: Record<ExpirationType, number | null> = {
     ONE_DAY : 1,
     TWO_DAYS: 2,

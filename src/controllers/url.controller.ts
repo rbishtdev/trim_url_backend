@@ -3,7 +3,7 @@ import {shortCodeSchema, shortenUrlSchema} from "../validators/url.validator";
 import {sendError, sendSuccess} from "../utils/response";
 import {STATUS_CODES} from "../utils/statusCodes";
 import {APP_MESSAGES, STATUS_MESSAGE_BY_CODE, STATUS_MESSAGES} from "../utils/statusMessages";
-import {createShortUrlService, getShortUrlService} from "../services/url.service";
+import {createShortUrlService, getShortUrlService, getUserUrlsService} from "../services/url.service";
 import {ShortUrlRequestBody} from "../interfaces/url/shorten-url.interface";
 import {AppError} from "../utils/appError";
 
@@ -69,5 +69,37 @@ export const redirectShortUrl: RequestHandler = async (req, res) => {
         const message = err.message || 'Something went wrong';
         const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
         sendError(res, status, message, errorText);
+    }
+};
+
+export const getUserUrlsByUserId: RequestHandler = async (req, res) => {
+    const userId = (req as any).user?.userId;
+
+    if (!userId) {
+         sendError(
+            res,
+            STATUS_CODES.UNAUTHORIZED,
+            STATUS_MESSAGES.UNAUTHORIZED,
+            STATUS_MESSAGES.UNAUTHORIZED
+        );
+         return;
+    }
+
+    try {
+        const urls = await getUserUrlsService(userId);
+
+         sendSuccess(
+            res,
+            STATUS_CODES.OK,
+            STATUS_MESSAGES.OK,
+            urls
+        );
+    } catch (err: any) {
+         sendError(
+            res,
+            STATUS_CODES.INTERNAL_SERVER_ERROR,
+            err.message || 'Failed to fetch URLs',
+            STATUS_MESSAGES.INTERNAL_SERVER_ERROR
+        );
     }
 };
