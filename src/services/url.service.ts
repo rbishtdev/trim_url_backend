@@ -146,16 +146,34 @@ export const getShortUrlService = async (shortCode: string) => {
     return urlData;
 };
 
-export const getUserUrlsService = async (userId: string) => {
-    return prisma.url.findMany({
-        where: {
-            userId,
-            deleted: false,
-        },
-        orderBy: {
-            createdAt: 'desc',
-        },
-    });
+export const getUserUrlsService = async (userId: string, page: number, limit: number) => {
+    const skip = (page - 1) * limit;
+
+    const [urls, total] = await Promise.all([
+        prisma.url.findMany({
+            where: {
+                userId,
+                deleted: false,
+            },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
+        }),
+        prisma.url.count({
+            where: {
+                userId,
+                deleted: false,
+            },
+        }),
+    ]);
+
+    return {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        urls,
+    };
 };
 
 const EXPIRATION_DAYS_MAP: Record<ExpirationType, number | null> = {

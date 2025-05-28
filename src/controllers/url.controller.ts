@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import {shortCodeSchema, shortenUrlSchema} from "../validators/url.validator";
+import {paginationSchema, shortCodeSchema, shortenUrlSchema} from "../validators/url.validator";
 import {sendError, sendSuccess} from "../utils/response";
 import {STATUS_CODES} from "../utils/statusCodes";
 import {APP_MESSAGES, STATUS_MESSAGE_BY_CODE, STATUS_MESSAGES} from "../utils/statusMessages";
@@ -73,33 +73,31 @@ export const redirectShortUrl: RequestHandler = async (req, res) => {
 };
 
 export const getUserUrlsByUserId: RequestHandler = async (req, res) => {
-    const userId = (req as any).user?.userId;
+    const { error, value } = paginationSchema.validate(req.query);
 
-    if (!userId) {
-         sendError(
+    if (error) {
+        sendError(
             res,
-            STATUS_CODES.UNAUTHORIZED,
-            STATUS_MESSAGES.UNAUTHORIZED,
-            STATUS_MESSAGES.UNAUTHORIZED
+            STATUS_CODES.BAD_REQUEST,
+            error.message,
+            STATUS_MESSAGES.BAD_REQUEST
         );
-         return;
+        return
     }
 
-    try {
-        const urls = await getUserUrlsService(userId);
+    const userId = (req as any).user?.userId;
 
-         sendSuccess(
-            res,
-            STATUS_CODES.OK,
-            STATUS_MESSAGES.OK,
-            urls
-        );
+    const page = parseInt(value.page);
+    const limit = parseInt(value.limit);
+
+    try {
+        const data = await getUserUrlsService(userId, page, limit);
+
+        sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, data);
     } catch (err: any) {
-         sendError(
-            res,
-            STATUS_CODES.INTERNAL_SERVER_ERROR,
-            err.message || 'Failed to fetch URLs',
-            STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-        );
+        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        const message = err.message || 'Something went wrong';
+        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
+        sendError(res, status, message, errorText);
     }
 };
