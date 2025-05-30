@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.routes";
 import cors from 'cors';
 import urlRoutes from "./routes/url.routes";
 import  './jobs/scheduler';
+import cookieParser from 'cookie-parser';
 
 // Load correct .env.development file based on NODE_ENV
 dotenv.config({
@@ -16,6 +17,7 @@ dotenv.config({
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
