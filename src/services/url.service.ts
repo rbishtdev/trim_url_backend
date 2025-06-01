@@ -4,7 +4,8 @@ import {ExpirationType} from "../utils/enums";
 import {ShortUrlRequestBody} from "../interfaces/url/shorten-url.interface";
 import {AppError} from "../utils/appError";
 import {RedisKeys} from "../utils/cacheKeys";
-import RedisHelper, {redisCacheHelper} from "../helpers/redisCacheHelper";
+import RedisHelper from "../helpers/redisCacheHelper";
+import {STATUS_CODES} from "../utils/statusCodes";
 
 export const createShortUrlService = async (
     data: ShortUrlRequestBody,
@@ -20,13 +21,13 @@ export const createShortUrlService = async (
 
     if (expirationType === ExpirationType.CUSTOM) {
         if (!customExpiryDate) {
-            throw new AppError('customExpiryDate required when expirationType is CUSTOM', 400);
+            throw new AppError('customExpiryDate required when expirationType is CUSTOM', STATUS_CODES.BAD_REQUEST);
         }
         expiresAt = new Date(customExpiryDate);
     } else if (expirationType !== ExpirationType.NONE) {
         const days = EXPIRATION_DAYS_MAP[expirationType];
         if (typeof days !== 'number') {
-            throw new AppError('Invalid expiration type.', 400);
+            throw new AppError('Invalid expiration type.', STATUS_CODES.BAD_REQUEST);
         }
 
         const now = new Date();
@@ -127,13 +128,20 @@ export const getShortUrlService = async (shortCode: string) => {
     const cached = await RedisHelper.get(cacheKey);
     if (cached) return cached;
 
+    console.log(shortCode);
+
     const urlData = await prisma.url.findFirst({
         where: {
-            shortCode,
-            deleted: false,
-            expiresAt: {
-                gt: new Date(),
-            },
+            AND: [
+                { shortCode },
+                { deleted: false },
+                {
+                    OR: [
+                        { expiresAt: null },
+                        { expiresAt: { gt: new Date() } },
+                    ],
+                },
+            ],
         },
     });
 
@@ -174,6 +182,80 @@ export const getUserUrlsService = async (userId: string, page: number, limit: nu
         totalPages: Math.ceil(total / limit),
         urls,
     };
+};
+
+export const getUrlStatsService = async (shortCode: string, userId: string | null) => {
+    const url = await prisma.url.findUnique({
+        where: { shortCode },
+        include: {
+            user: true,
+        },
+    });
+
+    if (!url || url.deleted) {
+        throw new AppError('URL not found or deleted', STATUS_CODES.NOT_FOUND);
+    }
+
+    // If user is not authenticated or not the owner → limited stats
+    if (!userId || url.userId !== userId) {
+        return {
+            shortCode: url.shortCode,
+            totalVisits: url.visits,
+        };
+    }
+
+    // Authenticated + Owner → fetch visit logs
+    const visitLogs = await prisma.urlVisit.findMany({
+        where: {
+            urlId: url.id,
+        },
+        select: {
+            country: true,
+            browser: true,
+            os: true,
+            ip: true,
+            createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+        shortCode: url.shortCode,
+        targetUrl: url.targetUrl,
+        totalVisits: url.visits,
+        visits: visitLogs,
+    };
+};
+
+export const logUrlVisit = async (
+    shortCode: string,
+    ip: string,
+    country: string,
+    browser: string,
+    os: string
+): Promise<void> => {
+    const url = await prisma.url.findUnique({
+        where: { shortCode },
+        select: { id: true },
+    });
+
+    if (!url) return;
+
+    await prisma.$transaction([
+        prisma.urlVisit.create({
+            data: {
+                urlId: url.id,
+                ip,
+                country,
+                browser,
+                os,
+            },
+        }),
+        prisma.url.update({
+            where: { shortCode },
+            data: { visits: { increment: 1 } },
+        }),
+    ]);
 };
 
 const EXPIRATION_DAYS_MAP: Record<ExpirationType, number | null> = {
